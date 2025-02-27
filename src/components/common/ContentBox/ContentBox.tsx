@@ -21,6 +21,7 @@ export const ContentBox: FC<ContentBoxProps> = ({
     bordered = false,
     fontSize = "medium",
     children,
+    // 프롭스
 }) => {
     return (
         <Box variant={variant} fullWidth={fullWidth} bordered={bordered} fontSize={fontSize}>

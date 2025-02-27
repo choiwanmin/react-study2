@@ -8,6 +8,7 @@ export const Notice = () => {
             <ContentBox variant='primary' fontSize='large'>
                 공지사항
             </ContentBox>
+            {/* <ContentBox title='공지사항' variant='primary' fontSize='large'></ContentBox> */}
             <NoticeSearch />
             <NoticeMain />
         </>
