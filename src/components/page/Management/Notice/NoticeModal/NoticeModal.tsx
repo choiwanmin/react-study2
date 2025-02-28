@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useState } from "react";
+import React, { ChangeEvent, FC, useEffect, useRef, useState } from "react";
 import { StyledButton } from "../../../../common/StyledButton/StyledButton";
 import { StyledInput } from "../../../../common/StyledInput/StyledInput";
 import { NoticeModalStyled } from "./styled";
@@ -10,6 +10,7 @@ import { INotice } from "../NoticeMain/NoticeMain";
 interface INoticeModalProps {
     noticeId: number;
     setNoticeId: React.Dispatch<React.SetStateAction<number>>;
+    postSuccess: () => void;
 }
 
 interface INoticeDetail extends INotice {
@@ -17,18 +18,26 @@ interface INoticeDetail extends INotice {
     fileExt: string | null;
     fileSize: number | null;
     physicalPath: string | null;
-    logicalPth: string | null;
+    logicalPath: string | null;
 }
 
 interface INoticeDetailResponse {
     detailValue: INoticeDetail;
 }
 
+interface IPostResponse {
+    result: "success" | "fail";
+}
+
 // export const NoticeModal: FC<{setFlag: React.Dispatch<React.SetStateAction<boolean>>} = ({setFlag}) => { // +>fc펑션 컴포넌트 약자
 // export const NoticeModal: FC<{ id: number }> = ({ id }) => {
-export const NoticeModal: FC<INoticeModalProps> = ({ noticeId, setNoticeId }) => {
+export const NoticeModal: FC<INoticeModalProps> = ({ noticeId, setNoticeId, postSuccess }) => {
     const [modal, setModal] = useRecoilState<boolean>(modalState);
     const [detail, setDetail] = useState<INoticeDetail>();
+    const formRef = useRef<HTMLFormElement>(null);
+    const [imageUrl, setImageUrl] = useState<string>("");
+    // const [fileData, setFileData] = useState<File>(null);
+    const [fileName, setFileName] = useState<string>("");
 
     useEffect(() => {
         // console.log(noticeId);
@@ -43,30 +52,161 @@ export const NoticeModal: FC<INoticeModalProps> = ({ noticeId, setNoticeId }) =>
 
     const searchDetail = () => {
         axios
-            .post("/management/noticeDetailJson.do", { noticeId })
+            // .post("/management/noticeDetailJson.do", { noticeId })
+            .post("/management/noticeFileDetailBody.do", { noticeId })
             .then((res: AxiosResponse<INoticeDetailResponse>) => {
+                // +>분기처리
+                if (res.data.detailValue) {
+                    setDetail(res.data.detailValue);
+                    const { fileExt, logicalPath } = res.data.detailValue; // +>셋디테일은 비동기 언디파인드
+                    // console.log(fileExt);
+                    if (fileExt === "jpg" || fileExt === "gif" || fileExt === "png") {
+                        setImageUrl(logicalPath);
+                    } else {
+                        setImageUrl("");
+                    }
+                }
                 // console.log(res);
-                setDetail(res.data.detailValue);
+            });
+    };
+
+    const saveNotice = () => {
+        axios.post("/management/noticeSave.do", formRef.current).then((res: AxiosResponse<IPostResponse>) => {
+            if (res.data.result === "success") {
+                alert("저장되었습니다.");
+                postSuccess();
+            }
+        });
+        // console.log(formRef.current);
+    };
+
+    const saveNoticeFile = () => {
+        axios.post("/management/noticeFileSave.do", formRef.current).then((res: AxiosResponse<IPostResponse>) => {
+            if (res.data.result === "success") {
+                alert("저장되었습니다.");
+                postSuccess();
+            }
+        });
+    };
+
+    const updateNotice = () => {
+        const formData = new FormData(formRef.current);
+        formData.append("noticeId", noticeId.toString());
+        axios.post("/management/noticeUpdate.do", formData).then((res: AxiosResponse<IPostResponse>) => {
+            if (res.data.result === "success") {
+                alert("수정되었습니다.");
+                postSuccess();
+            }
+        });
+    };
+
+    const updateNoticeFile = () => {
+        const formData = new FormData(formRef.current);
+        formData.append("noticeId", noticeId.toString());
+        axios.post("/management/noticeFileUpdate.do", formData).then((res: AxiosResponse<IPostResponse>) => {
+            if (res.data.result === "success") {
+                alert("수정되었습니다.");
+                postSuccess();
+            }
+        });
+    };
+
+    const deleteNotice = () => {
+        axios.post("/management/noticeDeleteJson.do", { noticeId }).then((res: AxiosResponse<IPostResponse>) => {
+            if (res.data.result === "success") {
+                alert("삭제되었습니다.");
+                postSuccess();
+            }
+        });
+    };
+
+    const deleteNoticeFile = () => {
+        axios.post("/management/noticeDeleteJson.do", { noticeId }).then((res: AxiosResponse<IPostResponse>) => {
+            if (res.data.result === "success") {
+                alert("삭제되었습니다.");
+                postSuccess();
+            }
+        });
+    };
+
+    const handlerFile = (e: ChangeEvent<HTMLInputElement>) => {
+        // console.log(e.target.files);
+        const fileInfo = e.target.files;
+        if (fileInfo?.length > 0) {
+            const fileSplit = fileInfo[0].name.split(".");
+            const fileExt = fileSplit[1].toLowerCase();
+
+            if (fileExt === "jpg" || fileExt === "gif" || fileExt === "png") {
+                // console.log(URL.createObjectURL(fileInfo[0])); // +>파일 정보 url을 만들어주는 역할
+                setImageUrl(URL.createObjectURL(fileInfo[0]));
+            }
+            setFileName(fileInfo[0].name);
+        }
+    };
+
+    const fileDownload = () => {
+        const param = new URLSearchParams();
+        param.append("noticeId", noticeId.toString());
+        // blob 바이너리 타입 반환을 위한
+        axios
+            .post("/management/noticeDownload.do", param, { responseType: "blob" })
+            .then((res: AxiosResponse<Blob>) => {
+                const url = window.URL.createObjectURL(res.data);
+                const link = document.createElement("a");
+                link.href = url;
+                link.setAttribute("download", detail.fileName as string); // as string 입니다.
+                document.body.appendChild(link);
+                link.click();
+
+                // document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+
+                console.log(url);
             });
     };
 
     return (
         <NoticeModalStyled>
             <div className='container'>
-                <form>
+                <form ref={formRef}>
                     <label>
                         제목 :<StyledInput type='text' name='fileTitle' defaultValue={detail?.title}></StyledInput>
                     </label>
                     <label>
                         내용 : <StyledInput type='text' name='fileContent' defaultValue={detail?.content}></StyledInput>
                     </label>
-                    파일 :<StyledInput type='file' id='fileInput' style={{ display: "none" }}></StyledInput>
+                    파일 :
+                    <StyledInput
+                        type='file'
+                        id='fileInput'
+                        style={{ display: "none" }}
+                        name='file'
+                        onChange={handlerFile}
+                    ></StyledInput>
                     <label className='img-label' htmlFor='fileInput'>
                         파일 첨부하기
                     </label>
-                    <div></div>
+                    <div onClick={fileDownload}>
+                        {imageUrl ? (
+                            <div>
+                                <label>미리보기</label>
+                                <img src={imageUrl} />
+                                {fileName || detail.fileName}
+                            </div>
+                        ) : (
+                            <div>{fileName}</div>
+                        )}
+                    </div>
                     <div className={"button-container"}>
-                        <StyledButton type='button'>저장</StyledButton>
+                        <StyledButton type='button' onClick={noticeId ? updateNoticeFile : saveNoticeFile}>
+                            {noticeId ? "수정" : "저장"}
+                        </StyledButton>
+                        {!!noticeId && (
+                            <StyledButton type='button' onClick={deleteNoticeFile}>
+                                삭제
+                            </StyledButton>
+                        )}
+                        {/* +> ! -> false !! -> true */}
                         {/* <StyledButton type='button' onClick={() => setFlag(false)}>나가기</StyledButton> */}
                         <StyledButton type='button' onClick={() => setModal(!modal)}>
                             나가기
