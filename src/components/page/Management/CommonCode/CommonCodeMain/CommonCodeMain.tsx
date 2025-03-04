@@ -3,45 +3,78 @@ import { CommonCodeMainStyled } from "./styled";
 import { CommonCodeContext } from "../../../../../api/Provider/CommonCodeProvider";
 import axios, { AxiosResponse } from "axios";
 import { StyledButton } from "../../../../common/StyledButton/StyledButton";
+import { useRecoilState } from "recoil";
+import { modalState } from "../../../../../stores/modalState";
+import { CommonCodeModal } from "../CommonCodeModal/CommonCodeModal";
+import { Portal } from "../../../../common/potal/Portal";
+import { useNavigate } from "react-router-dom";
+import { searchApi } from "../../../../../api/CommonCodeApi/searchApi";
+import { CommonCode } from "../../../../../api/api";
 
-interface ICommonCode {
-    groupIdx: number;
-    groupCode: string;
-    groupName: string;
-    useYn: string;
-    createdDate: string;
-    author: string;
-    note: string;
-}
-
-interface ICommonCodeResponse {
-    commonCode: ICommonCode[];
-    commonCodeCnt: number;
-}
+import { ICommonCode, ICommonCodeResponse } from "../../../../../models/interface/ICommonCode";
 
 export const CommonCodeMain = () => {
     const { searchKeyword } = useContext(CommonCodeContext);
     const [commonCodeList, setCommonCodeList] = useState<ICommonCode[]>();
+    const [modal, setModal] = useRecoilState(modalState);
+    const [groupId, setGroupId] = useState<number>(0);
+    const navigate = useNavigate(); //url 직접 접근 가능하도록
 
     useEffect(() => {
         console.log(searchKeyword);
         serachCommonCode();
     }, [searchKeyword]);
 
-    const serachCommonCode = (currentPage?: number) => {
+    // const serachCommonCode = (currentPage?: number) => {
+    const serachCommonCode = async (currentPage?: number) => {
         currentPage = currentPage || 1;
-        axios
-            .post("/management/commonCodeListBody.do", {
-                ...searchKeyword,
-                currentPage,
-                pageSize: 5,
-            })
-            .then((res: AxiosResponse<ICommonCodeResponse>) => {
-                setCommonCodeList(res.data.commonCode);
-            });
+        //비동기 함수
+        const result = await searchApi<ICommonCodeResponse>(CommonCode.searchList, {
+            ...searchKeyword,
+            currentPage,
+            pageSize: 5,
+        });
+
+        if (result) {
+            setCommonCodeList(result.commonCode);
+        }
+
+        searchApi;
+        // axios
+        //     .post("/management/commonCodeListBody.do", {
+        //         ...searchKeyword,
+        //         currentPage,
+        //         pageSize: 5,
+        //     })
+        //     .then((res: AxiosResponse<ICommonCodeResponse>) => {
+        //         setCommonCodeList(res.data.commonCode);
+        //     });
     };
+
+    const handlerModal = (id: number) => {
+        setModal(!modal);
+        setGroupId(id);
+    };
+
+    const postSuccess = () => {
+        setModal(!modal);
+        serachCommonCode();
+    };
+    // <StyledTable></StyledTable>
+    // const columns = [
+    //     { key: "groupIdx", title: "번호" },
+    //     { key: "groupCode", title: "그룹코드", clickable: true },
+    //     { key: "groupName", title: "그룹코드명" },
+    //     { key: "note", title: "그룹코드설명" },
+    //     { key: "createdDate", title: "등록일" },
+    //     { key: "useYn", title: "사용여부" },
+    //     { key: "actions", title: "비고" },
+    // ] as Column<ICommonCode>[];
+
     return (
         <CommonCodeMainStyled>
+            {/* <StyledTable data={commonCodeList} columns={colums} renderAction={(row) => <StyledButton size='small' onClick={() => handlerModal(row.groupIdx)}>수정</StyledButton>} onCellClick={(row, coulnm) => {if(column === "groupCode"){navigate(`${row.groupIdx}`, {state: {groupCode: row.groupCode}})}}}/>  */}
+
             <table>
                 <colgroup>
                     <col style={{ width: "5%" }} />
@@ -69,13 +102,31 @@ export const CommonCodeMain = () => {
                             return (
                                 <tr key={commonCode.groupIdx}>
                                     <td>{commonCode.groupIdx}</td>
-                                    <td>{commonCode.groupCode}</td>
+                                    <td
+                                        className='td-pointer'
+                                        onClick={() => {
+                                            // navigate("" + commonCode.groupIdx); //url 추가 타입은 string만 됨
+                                            navigate(`${commonCode.groupIdx}`, {
+                                                state: {
+                                                    groupCode: commonCode.groupCode,
+                                                },
+                                            }); //url 추가 타입은 string만 됨
+                                        }}
+                                    >
+                                        {commonCode.groupCode}
+                                    </td>
                                     <td>{commonCode.groupName}</td>
                                     <td>{commonCode.note}</td>
                                     <td>{commonCode.createdDate}</td>
                                     <td>{commonCode.useYn}</td>
                                     <td>
-                                        <StyledButton>수정</StyledButton>
+                                        <StyledButton
+                                            onClick={() => {
+                                                handlerModal(commonCode.groupIdx);
+                                            }}
+                                        >
+                                            수정
+                                        </StyledButton>
                                     </td>
                                 </tr>
                             );
@@ -87,6 +138,11 @@ export const CommonCodeMain = () => {
                     )}
                 </tbody>
             </table>
+            {modal && ( //모달이 참일때
+                <Portal>
+                    <CommonCodeModal groupId={groupId} postSuccess={postSuccess} setGroupId={setGroupId} />
+                </Portal>
+            )}
         </CommonCodeMainStyled>
     );
 };

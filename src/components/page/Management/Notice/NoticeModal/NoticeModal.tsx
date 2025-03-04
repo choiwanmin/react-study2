@@ -45,7 +45,7 @@ export const NoticeModal: FC<INoticeModalProps> = ({ noticeId, setNoticeId, post
 
         return () => {
             // +>콜백함수
-            // noticeId = 0; //+> 프롭스는 기본적으로 리드온니
+            // noticeId = 0; //+> 프롭스는 기본적으로 리드온니 => 변경하고 싶어도 변경 불가
             setNoticeId(0);
         };
     }, []);

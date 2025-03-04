@@ -24,8 +24,13 @@ const routers: RouteObject[] = [
                     },
                     {
                         path: "common-code",
-                        element: <CommonCode />
-                    }
+                        element: <CommonCode />,
+                    },
+                    {
+                        path: "common-code/:groupIdx", //:의 의미는 값을 변할 수 있다라는 의미
+                        // path:"common-code/:id", //:의 의미는 값을 변할 수 있다라는 의미
+                        element: <DetailCode />,
+                    },
                 ],
             },
         ],

@@ -1,7 +1,54 @@
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { StyledButton } from "../../../../common/StyledButton/StyledButton";
 import { DetailCodeMainStyled } from "./styled";
+import axios, { AxiosResponse } from "axios";
+import { useContext, useEffect, useState } from "react";
+import { CommonDetailCodeContext } from "../../../../../api/Provider/CommonDetailCodeProvider";
+
+interface ICommonDetailCode {
+    detailIdx: number;
+    groupCode: string;
+    detailCode: string;
+    detailName: string;
+    useYn: "Y" | "N";
+    author: string;
+    createdDate: string;
+    note: string;
+}
+
+interface ICommonDetailResponse {
+    commonDetailCodeCnt: number;
+    commonDetailCode: ICommonDetailCode[];
+}
 
 export const DetailCodeMain = () => {
+    const navigate = useNavigate(); //url 맘대로 조정 가능
+    // const location = useLocation(); //리액트라우터돔에서 제공하는 훅
+    // console.log(location);
+    const { state } = useLocation();
+    // const params = useParams;
+    // console.log(params);
+    const { groupIdx } = useParams();
+    const [commonDetailCodeList, setCommonCodeList] = useState<ICommonDetailCode[]>();
+    const { searchKeyword } = useContext(CommonDetailCodeContext);
+
+    useEffect(() => {
+        searchDetailCode();
+    }, [searchKeyword]);
+
+    const searchDetailCode = () => {
+        axios
+            .post("/management/commonDetailCodeListJson.do", {
+                ...searchKeyword,
+                groupCode: state.groupCode,
+                currentPage: 1,
+                pageSize: 5,
+            })
+            .then((res: AxiosResponse<ICommonDetailResponse>) => {
+                setCommonCodeList(res.data.commonDetailCode);
+            });
+    };
+
     return (
         <DetailCodeMainStyled>
             <table>
@@ -17,12 +64,31 @@ export const DetailCodeMain = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td colSpan={7}>조회 내역이 없습니다.</td>
-                    </tr>
+                    {commonDetailCodeList?.length > 0 ? (
+                        commonDetailCodeList.map((commonDetailCode) => {
+                            return (
+                                <tr key={commonDetailCode.detailIdx}>
+                                    <td>{commonDetailCode.detailIdx}</td>
+                                    <td>{commonDetailCode.groupCode}</td>
+                                    <td>{commonDetailCode.detailCode}</td>
+                                    <td>{commonDetailCode.detailName}</td>
+                                    <td>{commonDetailCode.note}</td>
+                                    <td>{commonDetailCode.useYn}</td>
+                                    <td>
+                                        <StyledButton>수정</StyledButton>
+                                    </td>
+                                </tr>
+                            );
+                        })
+                    ) : (
+                        <tr>
+                            <td colSpan={7}>조회 내역이 없습니다.</td>
+                        </tr>
+                    )}
                 </tbody>
             </table>
-            <StyledButton>뒤로가기</StyledButton>
+            <StyledButton onClick={() => navigate(-1)}>뒤로가기</StyledButton>
+            {/* 라우터 경로들도 저장되어있음, 스택으로 쌓이게 됨*/}
         </DetailCodeMainStyled>
     );
 };
