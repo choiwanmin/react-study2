@@ -7,6 +7,8 @@ import { NoticeModal } from "../NoticeModal/NoticeModal";
 import { Portal } from "../../../../common/potal/Portal";
 import { useRecoilState } from "recoil";
 import { modalState } from "../../../../../stores/modalState";
+import { searchApi } from "../../../../../api/NoticeApi/searchApi";
+import { Notice } from "../../../../../api/api";
 
 export interface INotice {
     noticeId: number;
@@ -36,7 +38,8 @@ export const NoticeMain = () => {
     }, [search]); // +>[]안에 값이 변경 될 때마다 작용
 
     const searchNoticeList = (currentPage?: number) => {
-        // +> 서버쪽에서 이미 ?사용가능하게 되어있기에 사용 가능
+        // const searchNoticeList = async (currentPage?: number) => {
+        // // +> 서버쪽에서 이미 ?사용가능하게 되어있기에 사용 가능
         currentPage = currentPage || 1;
         const searchParam = new URLSearchParams(search); // +>키와 벨류로 나누어 주는 역할
         searchParam.append("currentPage", currentPage.toString());
@@ -46,11 +49,20 @@ export const NoticeMain = () => {
         // axios.post("/management/noticeListBody.do", searchParam) {
         axios.post("/management/noticeListBody.do", searchParam).then((res: AxiosResponse) => {
             console.log(res);
+            console.log(res.data);
+            console.log(res.data.noticeList);
             // +>서버에 api로 요청 역할
             setNoticeList(res.data.noticeList);
             setNoticeCount(res.data.noticeCnt);
             setCPage(currentPage);
         });
+        // const result = await searchApi<INoticeListBodyResponse, URLSearchParams>(Notice.search, searchParam);
+
+        // if (result) {
+        //     setNoticeList(result.noticeList);
+        //     setNoticeCount(result.noticeCnt);
+        //     setCPage(currentPage);
+        // }
     };
     // console.log(getParam);
     // console.log(getParam.search);

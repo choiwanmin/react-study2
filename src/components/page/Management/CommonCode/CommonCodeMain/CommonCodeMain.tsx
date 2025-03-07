@@ -21,7 +21,7 @@ export const CommonCodeMain = () => {
     const navigate = useNavigate(); //url 직접 접근 가능하도록
 
     useEffect(() => {
-        console.log(searchKeyword);
+        console.log("searchKeyword:" + searchKeyword);
         serachCommonCode();
     }, [searchKeyword]);
 

@@ -7,6 +7,7 @@ import axios, { AxiosResponse } from "axios";
 import { searchApi } from "../../../../../api/CommonCodeApi/searchApi";
 import { CommonCode } from "../../../../../api/api";
 import { postApi } from "../../../../../api/CommonCodeApi/postApi";
+import { ICommonCode } from "../../../../../models/interface/ICommonCode";
 
 //프롭타입 지정
 interface ICommonCodeModalProps {
@@ -15,19 +16,9 @@ interface ICommonCodeModalProps {
     setGroupId: React.Dispatch<React.SetStateAction<number>>;
 }
 
-interface ICommonCode {
-    groupId: number;
-    groupCode: string;
-    groupName: string;
-    useYn: string;
-    createdDate: string;
-    author: string;
-    note: string;
-}
-
 // ctrl + d 단축키 같은 이름 선택
 const initCommonCode = {
-    groupId: 0,
+    groupIdx: 0,
     groupCode: "",
     groupName: "",
     useYn: "N",
